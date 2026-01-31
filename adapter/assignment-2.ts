@@ -8,7 +8,7 @@ export type BookID = string;
 const API_URL = 'http://localhost:3000';
 
 async function listBooks(filters?: Array<{ from?: number; to?: number }>): Promise<Book[]> {
-  let query = filters?.map(({ from, to }, index) => {
+  const query = filters?.map(({ from, to }, index) => {
     let result = '';
     if (from !== undefined) result += `filters[${index}][from]=${from}&`;
     if (to !== undefined) result += `filters[${index}][to]=${to}&`;
