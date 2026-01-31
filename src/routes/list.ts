@@ -8,34 +8,56 @@ router.get('/books', async (ctx) => {
     const collection = getBooksCollection();
 
     const filters = ctx.query.filters as
-      | Array<{ from?: string; to?: string }>
+      | Array<{
+          from?: string;
+          to?: string;
+          name?: string;
+          author?: string;
+        }>
       | undefined;
 
-    let query: any = {};
+    //Remove empty / invalid filters
+    const validFilters = filters?.filter(({ from, to, name, author }) =>
+      from !== undefined ||
+      to !== undefined ||
+      (typeof name === 'string' && name.trim().length > 0) ||
+      (typeof author === 'string' && author.trim().length > 0)
+    ) ?? [];
 
-    if (filters && Array.isArray(filters) && filters.length > 0) {
-      const priceQueries = filters
-        .map(filter => {
-          const price: any = {};
-          if (filter.from !== undefined) {
-            const from = Number(filter.from);
-            if (!Number.isNaN(from)) price.$gte = from;
+    //Build MongoDB query
+    const query =
+      validFilters.length > 0
+        ? {
+            $or: validFilters.map(({ from, to, name, author }) => {
+              const filter: any = {};
+
+              if (from !== undefined || to !== undefined) {
+                filter.price = {};
+                if (from !== undefined && !Number.isNaN(Number(from))) {
+                  filter.price.$gte = Number(from);
+                }
+                if (to !== undefined && !Number.isNaN(Number(to))) {
+                  filter.price.$lte = Number(to);
+                }
+              }
+
+              if (typeof name === 'string' && name.trim().length > 0) {
+                filter.name = { $regex: name.trim(), $options: 'i' };
+              }
+
+              if (typeof author === 'string' && author.trim().length > 0) {
+                filter.author = { $regex: author.trim(), $options: 'i' };
+              }
+
+              return filter;
+            })
           }
-          if (filter.to !== undefined) {
-            const to = Number(filter.to);
-            if (!Number.isNaN(to)) price.$lte = to;
-          }
-          return Object.keys(price).length > 0 ? { price } : null;
-        })
-        .filter(Boolean);
+        : {};
 
-      if (priceQueries.length > 0) {
-        query = { $or: priceQueries };
-      }
-    }
-
+    // Query DB once
     const books = await collection.find(query).toArray();
 
+    // Normalize output
     ctx.body = books.map(b => ({
       id: b._id.toString(),
       name: b.name,
