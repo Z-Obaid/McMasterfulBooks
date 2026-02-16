@@ -1,6 +1,3 @@
-//const MONGO_URL = 'mongodb://mongo:27017';
-//const DB_NAME = 'mcmasterful-books';
-
 import { Db, MongoClient, Collection, Document } from 'mongodb';
 
 // Use test URI if available, otherwise use environment variable or default

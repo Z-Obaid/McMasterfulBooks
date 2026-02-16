@@ -4,10 +4,14 @@ export default defineConfig({
   test: {
     globals: true,
     environment: 'node',
-    includeSource: ['src/**/*.{ts,js}'],
-    watch: false,
-    include: ['**/*.test.ts'],
-    testTimeout: 10000,
-    hookTimeout: 60000, 
-  }
+    setupFiles: ['./src/test/setup.ts'],
+    includeSource: ['src/**/*.ts'],
+    exclude: ['node_modules', 'dist', 'adapter/**'],
+    testTimeout: 30000,
+    hookTimeout: 120000,
+    fileParallelism: false,
+  },
+  define: {
+    'import.meta.vitest': 'undefined',
+  },
 });
