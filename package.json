@@ -1,46 +1,42 @@
 {
-    "name": "assignment-1",
-    "version": "1.0.0",
-    "description": "This is a template repository for the first assignment in BVD 103 at McMaster Continuing Education.",
-    "main": "index.js",
-    "scripts": {
-        "start-server": "ts-node src/server.ts",
-        "lint": "eslint . --ext .ts",
-        "fix-lint": "eslint . --ext .ts --fix",
-        "fmt": "eslint . --fix",
-        "typecheck": "tsc --noEmit",
-        "test": "USE_DB=true vitest",
-        "test:watch": "vitest --watch",
-        "test:ci": "vitest run"
-    },
-    "keywords": [],
-    "author": "",
-    "license": "ISC",
-    "dependencies": {
-        "@koa/cors": "^5.0.0",
-        "@koa/router": "^15.1.1",
-        "koa": "^2.16.3",
-        "koa-bodyparser": "^4.4.1",
-        "koa-qs": "^3.0.0",
-        "koa-zod-router": "^2.3.0",
-        "mongodb": "7.0",
-        "tsx": "^4.19.1",
-        "zod": "^3.25.76"
-    },
-    "devDependencies": {
-        "@types/koa": "^2.15.0",
-        "@types/koa__cors": "^5.0.0",
-        "@types/koa__router": "^12.0.4",
-        "@types/koa-qs": "^2.0.3",
-        "@types/node": "^22.19.3",
-        "@typescript-eslint/eslint-plugin": "^8.54.0",
-        "@typescript-eslint/parser": "^8.54.0",
-        "eslint": "^9.39.2",
-        "mongodb-memory-server": "^11.0.1",
-        "ts-node": "^10.9.2",
-        "typescript": "^5.6.2",
-        "typescript-eslint": "^8.54.0",
-        "vite": "^6.3.5",
-        "vitest": "^4.0.18"
-    }
+  "overrides": {
+  "is-generator-function": "1.1.0"
+},
+  "name": "assignment-template",
+  "version": "1.0.0",
+  "description": "This is a template repository for the first assignment in BVD 103 at McMaster Continuing Education.",
+  "main": "src/server.ts",
+  "scripts": {
+    "start-server": "tsx ./src/server.ts",
+    "test": "vitest",
+    "test:ci": "vitest run",
+    "lint": "eslint . --ext .ts",
+    "fix-lint": "eslint . --ext .ts --fix",
+    "type-check": "tsc --noEmit"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@koa/cors": "^5.0.0",
+    "koa": "^2.15.2",
+    "koa-qs": "^3.0.0",
+    "koa-zod-router": "^2.2.0",
+    "mongodb": "^7.0.0",
+    "tsx": "^4.21.0",
+    "zod": "^3.22.4"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.2",
+    "@types/koa": "~2.15.0",
+    "@types/koa__cors": "~5.0.0",
+    "@types/koa-qs": "~2.0.3",
+    "@types/node": "^25.0.3",
+    "eslint": "^9.39.2",
+    "mongodb-memory-server": "^10.0.0",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.50.1",
+    "vitest": "^2.0.0"
+  }
 }
