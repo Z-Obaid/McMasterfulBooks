@@ -1,12 +1,12 @@
-import { Db, MongoClient, Collection, Document } from 'mongodb';
-
 //const MONGO_URL = 'mongodb://mongo:27017';
 //const DB_NAME = 'mcmasterful-books';
+
+import { Db, MongoClient, Collection, Document } from 'mongodb';
 
 // Use test URI if available, otherwise use environment variable or default
 function getMongoUri(): string {
   const testUri = (global as Record<string, unknown>).MONGO_URI as string | undefined;
-  return testUri ?? process.env.MONGODB_URL ?? 'mongodb://mongo:27017';
+  return testUri ?? process.env.MONGODB_URL ?? 'mongodb://localhost:27017';
 }
 
 function isTestEnvironment(): boolean {
