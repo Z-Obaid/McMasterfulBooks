@@ -1,52 +1,62 @@
-import Router from '@koa/router';
+import { z } from 'zod';
+import { type ZodRouter } from 'koa-zod-router';
+import { getDatabase } from '../db';
 import { ObjectId } from 'mongodb';
-import { getBooksCollection } from '../db';
 
-const router = new Router();
+export default function createOrUpdateBook(router: ZodRouter): void {
+  router.register({
+    name: 'create or update a book',
+    method: 'post',
+    path: '/books',
+    validate: {
+      body: z.object({
+        id: z.string().optional(),
+        name: z.string(),
+        price: z.coerce.number(),
+        description: z.string(),
+        author: z.string(),
+        image: z.string()
+      })
+    },
+    handler: async (ctx, next) => {
+      const body = ctx.request.body;
+      const db = getDatabase();
+      const bookCollection = db.collection('books');
 
-router.post('/books', async (ctx) => {
-    const book = ctx.request.body as any;
-
-    if (!book?.name || !book?.author || typeof book.price !== 'number') {
-        ctx.status = 400;
-        ctx.body = { error: 'Invalid book data' };
-        return;
+      if (typeof body.id === 'string') {
+        const id = body.id;
+        try {
+          const result = await bookCollection.replaceOne({ _id: { $eq: ObjectId.createFromHexString(id) } }, {
+            id,
+            name: body.name,
+            description: body.description,
+            price: body.price,
+            author: body.author,
+            image: body.image
+          });
+          if (result.modifiedCount === 1) {
+            ctx.body = { id };
+          } else {
+            ctx.status = 404;
+          }
+        } catch {
+          ctx.status = 500;
+        }
+      } else {
+        try {
+          const result = await bookCollection.insertOne({
+            name: body.name,
+            description: body.description,
+            price: body.price,
+            author: body.author,
+            image: body.image
+          });
+          ctx.body = { id: result.insertedId };
+        } catch {
+          ctx.status = 500;
+        }
+      }
+      await next();
     }
-
-    const result = await getBooksCollection().insertOne({
-        name: book.name,
-        author: book.author,
-        description: book.description || '',
-        price: book.price,
-        image: book.image || ''
-    });
-
-    ctx.status = 201;
-    ctx.body = { id: result.insertedId.toString() };
-});
-
-router.put('/books/:id', async (ctx) => {
-    const { id } = ctx.params;
-    if (!ObjectId.isValid(id)) {
-        ctx.status = 400;
-        ctx.body = { error: 'Invalid book ID' };
-        return;
-    }
-
-    const book = ctx.request.body as any;
-
-    const result = await getBooksCollection().updateOne(
-        { _id: new ObjectId(id) },
-        { $set: book }
-    );
-
-    if (result.matchedCount === 0) {
-        ctx.status = 404;
-        ctx.body = { error: 'Book not found' };
-        return;
-    }
-
-    ctx.body = { id };
-});
-
-export default router;
+  });
+}

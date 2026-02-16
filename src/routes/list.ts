@@ -1,76 +1,96 @@
-import Router from '@koa/router';
-import { getBooksCollection } from '../db';
+import { z } from 'zod';
+import { getDatabase } from '../db';
+import { type ZodRouter } from 'koa-zod-router';
+import { getWarehouseStorage } from '../warehouse/memory-adapter';
 
-const router = new Router();
+interface BookDocument {
+  name: string;
+  author: string;
+  description: string;
+  price: number;
+  image: string;
+}
 
-router.get('/books', async (ctx) => {
-  try {
-    const collection = getBooksCollection();
+interface BookWithStock {
+  id: string;
+  name: string;
+  author: string;
+  description: string;
+  price: number;
+  image: string;
+  stock: number;
+}
 
-    const filters = ctx.query.filters as
-      | Array<{
-          from?: string;
-          to?: string;
-          name?: string;
-          author?: string;
-        }>
-      | undefined;
+export default function booksList(router: ZodRouter): void {
+  router.register({
+    name: 'list books',
+    method: 'get',
+    path: '/books',
+    validate: {
+      query: z.object({
+        filters: z.object({
+          from: z.coerce.number().optional(),
+          to: z.coerce.number().optional(),
+          name: z.string().optional(),
+          author: z.string().optional()
+        }).array().optional()
+      })
+    },
+    handler: async (ctx, next) => {
+      const { filters } = ctx.request.query;
+      const warehouse = getWarehouseStorage();
 
-    //Remove empty / invalid filters
-    const validFilters = filters?.filter(({ from, to, name, author }) =>
-      from !== undefined ||
-      to !== undefined ||
-      (typeof name === 'string' && name.trim().length > 0) ||
-      (typeof author === 'string' && author.trim().length > 0)
-    ) ?? [];
+      const validFilters = filters?.filter(({ from, to, name, author }) =>
+        typeof from === 'number' ||
+        typeof to === 'number' ||
+        (typeof name === 'string' && name.trim().length > 0) ||
+        (typeof author === 'string' && author.trim().length > 0)
+      ) ?? [];
 
-    //Build MongoDB query
-    const query =
-      validFilters.length > 0
+      const query = validFilters.length > 0
         ? {
             $or: validFilters.map(({ from, to, name, author }) => {
-              const filter: any = {};
-
-              if (from !== undefined || to !== undefined) {
-                filter.price = {};
-                if (from !== undefined && !Number.isNaN(Number(from))) {
-                  filter.price.$gte = Number(from);
-                }
-                if (to !== undefined && !Number.isNaN(Number(to))) {
-                  filter.price.$lte = Number(to);
-                }
+              const filter: { price?: { $gte?: number, $lte?: number }, name?: { $regex: string, $options: string }, author?: { $regex: string, $options: string } } = {};
+              if (typeof from === 'number') {
+                filter.price = { $gte: from };
               }
-
-              if (typeof name === 'string' && name.trim().length > 0) {
-                filter.name = { $regex: name.trim(), $options: 'i' };
+              if (typeof to === 'number') {
+                filter.price = { ...(filter.price ?? {}), $lte: to };
               }
-
-              if (typeof author === 'string' && author.trim().length > 0) {
-                filter.author = { $regex: author.trim(), $options: 'i' };
+              if (typeof name === 'string') {
+                filter.name = { $regex: name.toLowerCase(), $options: 'ix' };
               }
-
+              if (typeof author === 'string') {
+                filter.author = { $regex: author.toLowerCase(), $options: 'ix' };
+              }
               return filter;
             })
           }
         : {};
 
-    // Query DB once
-    const books = await collection.find(query).toArray();
+      const db = getDatabase();
+      const bookCollection = db.collection<BookDocument>('books');
+      const documents = await bookCollection.find(query).toArray();
 
-    // Normalize output
-    ctx.body = books.map(b => ({
-      id: b._id.toString(),
-      name: b.name,
-      author: b.author,
-      description: b.description,
-      price: b.price,
-      image: b.image
-    }));
-  } catch (err) {
-    console.error(err);
-    ctx.status = 500;
-    ctx.body = { error: 'Failed to fetch books' };
-  }
-});
+      // Get stock levels for each book
+      const bookList: BookWithStock[] = await Promise.all(
+        documents.map(async (document) => {
+          const id = document._id.toHexString();
+          const stock = await warehouse.getTotalStock(id);
+          return {
+            id,
+            name: document.name,
+            image: document.image,
+            price: document.price,
+            author: document.author,
+            description: document.description,
+            stock
+          };
+        })
+      );
 
-export default router;
+      ctx.body = bookList;
+      await next();
+    }
+  });
+}

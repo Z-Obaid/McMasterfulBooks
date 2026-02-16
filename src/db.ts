@@ -1,28 +1,78 @@
-import { MongoClient, Collection } from 'mongodb';
+import { Db, MongoClient, Collection, Document } from 'mongodb';
 
-const MONGO_URL = 'mongodb://mongo:27017';
-const DB_NAME = 'mcmasterful-books';
+//const MONGO_URL = 'mongodb://mongo:27017';
+//const DB_NAME = 'mcmasterful-books';
 
-export interface Book {
-    _id?: any;
-    name: string;
-    author: string;
-    description: string;
-    price: number;
-    image: string;
+// Use test URI if available, otherwise use environment variable or default
+function getMongoUri(): string {
+  const testUri = (global as Record<string, unknown>).MONGO_URI as string | undefined;
+  return testUri ?? process.env.MONGODB_URL ?? 'mongodb://mongo:27017';
 }
 
-let client: MongoClient;
-
-export async function connectToDatabase() {
-    client = new MongoClient(MONGO_URL);
-    await client.connect();
-    console.log('MongoDB connected');
+function isTestEnvironment(): boolean {
+  return (global as Record<string, unknown>).MONGO_URI !== undefined;
 }
 
-export function getBooksCollection(): Collection<Book> {
-    if (!client) {
-        throw new Error('MongoDB client not initialized');
+let client: MongoClient | null = null;
+let database: Db | null = null;
+
+export async function connectToDatabase(dbName?: string): Promise<Db> {
+  if (database && !dbName) {
+    return database;
+  }
+
+  const uri = getMongoUri();
+  client = new MongoClient(uri);
+  await client.connect();
+
+  // In test mode, use random database name for isolation if not specified
+  const databaseName = dbName ?? (isTestEnvironment()
+    ? `test_${Math.floor(Math.random() * 100000)}`
+    : 'mcmasterful-books');
+
+  database = client.db(databaseName);
+  return database;
+}
+
+export async function disconnectFromDatabase(): Promise<void> {
+  if (client) {
+    await client.close();
+    client = null;
+    database = null;
+  }
+}
+
+export function getDatabase(): Db {
+  if (!database) {
+    throw new Error('Database not connected. Call connectToDatabase first.');
+  }
+  return database;
+}
+
+// Helper to get a typed collection
+export function getCollection<T extends Document>(name: string): Collection<T> {
+  return getDatabase().collection<T>(name);
+}
+
+// For testing: create a fresh database accessor with isolation
+export interface DatabaseAccessor {
+  db: Db;
+  close: () => Promise<void>;
+}
+
+export async function createTestDatabase(): Promise<DatabaseAccessor> {
+  const uri = getMongoUri();
+  const testClient = new MongoClient(uri);
+  await testClient.connect();
+
+  const dbName = `test_${Math.floor(Math.random() * 100000)}`;
+  const db = testClient.db(dbName);
+
+  return {
+    db,
+    close: async () => {
+      await db.dropDatabase();
+      await testClient.close();
     }
-    return client.db(DB_NAME).collection<Book>('books');
+  };
 }

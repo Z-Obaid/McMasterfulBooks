@@ -1,30 +1,37 @@
 import Koa from 'koa';
 import cors from '@koa/cors';
-import bodyParser from 'koa-bodyparser';
+import zodRouter from 'koa-zod-router';
 import qs from 'koa-qs';
-
 import { connectToDatabase } from './db';
-import routes from './routes';
+import { registerBookRoutes } from './routes/book-routes';
+import { registerWarehouseRoutes } from './warehouse/routes';
+import { registerOrderRoutes } from './orders/routes';
 
 const app = new Koa();
+
+// We use koa-qs to enable parsing complex query strings, like our filters.
 qs(app);
 
+// And we add cors to ensure we can access our API from the mcmasterful-books website
 app.use(cors());
-app.use(bodyParser());
 
-const PORT = 3000;
+const router = zodRouter();
 
-async function startServer() {
-    await connectToDatabase();
-    app.use(routes.routes());
-    app.use(routes.allowedMethods());
+// Register all routes
+registerBookRoutes(router);
+registerWarehouseRoutes(router);
+registerOrderRoutes(router);
 
-    app.listen(PORT, () => {
-        console.log(`Server running at http://localhost:${PORT}`);
+app.use(router.routes());
+
+// Connect to database and start server
+connectToDatabase()
+  .then(() => {
+    app.listen(3000, () => {
+      console.log('Server listening on port 3000');
     });
-}
-
-startServer().catch(err => {
-    console.error('Server failed to start:', err);
+  })
+  .catch((err) => {
+    console.error('Failed to connect to database:', err);
     process.exit(1);
-});
+  });

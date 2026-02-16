@@ -1,27 +1,30 @@
-import Router from '@koa/router';
+import { z } from 'zod';
+import { type ZodRouter } from 'koa-zod-router';
+import { getDatabase } from '../db';
 import { ObjectId } from 'mongodb';
-import { getBooksCollection } from '../db';
 
-const router = new Router();
-
-router.delete('/books/:id', async (ctx) => {
-    const { id } = ctx.params;
-
-    if (!ObjectId.isValid(id)) {
-        ctx.status = 400;
-        ctx.body = { error: 'Invalid book ID' };
-        return;
-    }
-
-    const result = await getBooksCollection().deleteOne({ _id: new ObjectId(id) });
-
-    if (result.deletedCount === 0) {
+export default function deleteBook(router: ZodRouter): void {
+  router.register({
+    name: 'delete a book',
+    method: 'delete',
+    path: '/books/:id',
+    validate: {
+      params: z.object({
+        id: z.string()
+      })
+    },
+    handler: async (ctx, next) => {
+      const id = ctx.request.params.id;
+      const objectId = ObjectId.createFromHexString(id);
+      const db = getDatabase();
+      const bookCollection = db.collection('books');
+      const result = await bookCollection.deleteOne({ _id: { $eq: objectId } });
+      if (result.deletedCount === 1) {
+        ctx.body = {};
+      } else {
         ctx.status = 404;
-        ctx.body = { error: 'Book not found' };
-        return;
+      }
+      await next();
     }
-
-    ctx.status = 204;
-});
-
-export default router;
+  });
+}
