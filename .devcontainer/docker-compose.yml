@@ -4,10 +4,13 @@ services:
     user: root
     ports:
       - "9080:9080"
+      - "3000:3000"
     volumes:
       - ..:/workspaces:cached
     environment:
       - MONGODB_URL=mongodb://mongo:27017
+    depends_on:
+      - mongo
     command: sleep infinity
   mongo:
     image: mongo:latest
