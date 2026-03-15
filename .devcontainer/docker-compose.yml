@@ -1,20 +1,10 @@
+version: "4.0"
+
 services:
   dev:
     image: mcr.microsoft.com/devcontainers/typescript-node:1-20-bookworm
     user: root
-    ports:
-      - "9080:9080"
-      - "3000:3000"
+    privileged: true
     volumes:
-      - ..:/workspaces:cached
-    environment:
-      - MONGODB_URL=mongodb://mongo:27017
-    depends_on:
-      - mongo
+      - ../..:/workspaces:cached
     command: sleep infinity
-  mongo:
-    image: mongo:latest
-    ports:
-      - "27017:27017"
-    volumes:
-      - ./init:/docker-entrypoint-initdb.d

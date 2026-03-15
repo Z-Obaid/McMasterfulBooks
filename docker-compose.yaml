@@ -1,0 +1,60 @@
+version: "3.8"
+
+services:
+  nginx:
+    image: nginx:latest
+    ports:
+      - "8080:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      - front-end
+      - server-a
+      - server-b
+      - server-c
+
+  front-end:
+    image: ghcr.io/mcmastercce/bvd-103-mcmasterful-books/mcmasterful-books-docker:main
+    volumes:
+      - ./adapter:/source/adapter
+
+  mongo:
+    image: mongo:latest
+    volumes:
+      - mongodb_data:/data/db
+
+  server-a:
+    image: node:20
+    working_dir: /app
+    volumes:
+      - .:/app
+    environment:
+      - MONGODB_URL=mongodb://mongo:27017
+    command: sh -c "npm install && npx -y tsx ./index.ts"
+    depends_on:
+      - mongo
+
+  server-b:
+    image: node:20
+    working_dir: /app
+    volumes:
+      - .:/app
+    environment:
+      - MONGODB_URL=mongodb://mongo:27017
+    command: sh -c "npm install && npx -y tsx ./index.ts"
+    depends_on:
+      - mongo
+
+  server-c:
+    image: node:20
+    working_dir: /app
+    volumes:
+      - .:/app
+    environment:
+      - MONGODB_URL=mongodb://mongo:27017
+    command: sh -c "npm install && npx -y tsx ./index.ts"
+    depends_on:
+      - mongo
+
+volumes:
+  mongodb_data:
