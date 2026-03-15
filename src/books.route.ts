@@ -1,4 +1,7 @@
 import { Route, Get, Post, Delete, Body, Path, Queries, Tags } from 'tsoa';
+import { getDatabase } from './db';
+import { lookupBookById } from './routes/lookup';
+import { ObjectId } from 'mongodb';
 
 export interface FilterInput {
   from?: number;
@@ -27,7 +30,8 @@ export class BooksRoute {
 
   @Get('{id}')
   public async getBook(@Path() id: string): Promise<BookDto | null> {
-    return null;
+    const db = getDatabase();
+    return await lookupBookById(id, db);
   }
 
   @Post()
@@ -37,6 +41,11 @@ export class BooksRoute {
 
   @Delete('{id}')
   public async deleteBook(@Path() id: string): Promise<void> {
-    return;
+    const db = getDatabase();
+    const collection = db.collection('books');
+
+    await collection.deleteOne({
+      _id: ObjectId.createFromHexString(id)
+    });
   }
 }

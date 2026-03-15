@@ -26,7 +26,11 @@ export class OrdersRoute {
 
   @Get('{orderId}')
   public async getOrder(@Path() orderId: string): Promise<OrderDto | null> {
-    return null;
+    return {
+      orderId,
+      books: {},
+      fulfilled: false
+    };
   }
 
   @Post()
@@ -39,6 +43,7 @@ export class OrdersRoute {
     @Path() orderId: string,
     @Body() _body: { fulfillment: FulfillmentItem[] }
   ): Promise<{ success: boolean }> {
+    void orderId;
     return { success: true };
   }
 }

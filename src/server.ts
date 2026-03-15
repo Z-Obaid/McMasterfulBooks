@@ -7,7 +7,6 @@ import Router from '@koa/router';
 import { koaSwagger } from 'koa2-swagger-ui';
 import { readFile } from 'node:fs/promises';
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
 import { connectToDatabase } from './db';
 import { registerBookRoutes } from './routes/book-routes';
 import { registerWarehouseRoutes } from './warehouse/routes';
@@ -26,7 +25,6 @@ app.use(apiRouter.routes());
 app.use(apiRouter.allowedMethods());
 
 const docsRouter = new Router();
-const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const swaggerPath = path.resolve(__dirname, '../build/swagger.json');
 

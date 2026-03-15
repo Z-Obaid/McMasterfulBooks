@@ -21,6 +21,7 @@ export class WarehouseRoute {
 
   @Get('books/{bookId}/locations')
   public async locations(@Path() bookId: string): Promise<ShelfStockDto[]> {
+    void bookId;
     return [];
   }
 
