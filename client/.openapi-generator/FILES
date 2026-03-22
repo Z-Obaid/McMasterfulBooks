@@ -11,9 +11,8 @@ models/FilterInput.ts
 models/FulfillOrderRequest.ts
 models/FulfillmentItem.ts
 models/OrderDto.ts
-models/PlaceBooks200Response.ts
+models/PlaceBooksOnShelf200Response.ts
 models/PlaceBooksRequest.ts
-models/ShelfStockDto.ts
-models/Stock200Response.ts
+models/ShelfStock.ts
 models/index.ts
 runtime.ts

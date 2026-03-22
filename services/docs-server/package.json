@@ -1,0 +1,14 @@
+{
+  "name": "docs-server",
+  "private": true,
+  "version": "1.0.0",
+  "scripts": {
+    "start": "npx tsx ./index.ts"
+  },
+  "dependencies": {
+    "@koa/router": "^15.1.1",
+    "koa": "^2.16.3",
+    "swagger-ui-dist": "^5.17.14",
+    "tsx": "^4.19.1"
+  }
+}
