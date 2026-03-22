@@ -26,9 +26,18 @@ export async function startListingsSubscriber(): Promise<void> {
     if (!msg) return;
     const event = JSON.parse(msg.content.toString()) as Record<string, unknown>;
     const db = getDatabase();
-    const books = db.collection('books');
+    type ListingBookDocument = {
+      _id: string;
+      stock?: number;
+    };
 
-    if (event.type === 'BookStockChanged' && typeof event.bookId === 'string' && typeof event.totalStock === 'number') {
+    const books = db.collection<ListingBookDocument>('books');
+
+    if (
+      event.type === 'BookStockChanged' &&
+      typeof event.bookId === 'string' &&
+      typeof event.totalStock === 'number'
+    ) {
       await books.updateOne(
         { _id: event.bookId },
         { $set: { stock: event.totalStock } }

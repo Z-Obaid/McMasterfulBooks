@@ -52,8 +52,8 @@ router.get('/docs', async (ctx) => {
 </html>`;
 });
 
-router.get('/docs/:asset(.*)', async (ctx) => {
-  const relativePath = ctx.params.asset;
+router.get(/^\/docs\/(.+)$/, async (ctx) => {
+  const relativePath = ctx.captures[0];
   const filePath = path.join(swaggerUiPath, relativePath);
 
   if (!existsSync(filePath)) {
